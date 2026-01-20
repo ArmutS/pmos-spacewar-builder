@@ -1,0 +1,61 @@
+name: Build PostmarketOS (Nothing Phone 1) - FINAL
+
+on:
+  workflow_dispatch: # Manuel tetikleme
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip git openssl android-sdk-platform-tools-common
+          sudo pip3 install git+https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git --break-system-packages
+
+      - name: Clone Custom Aports (Nothing Phone 1 Branch)
+        run: |
+          git clone -b nothing-spacewar https://gitlab.postmarketos.org/fekz115/pmaports.git pmaports
+          
+          # Remote hatasını çözmek için upstream ekliyoruz
+          cd pmaports
+          git remote add upstream https://gitlab.postmarketos.org/postmarketOS/pmaports.git
+          git fetch upstream
+          cd ..
+
+      - name: Initialize and Configure
+        run: |
+          # Varsayılan ayarlarla init
+          yes "" | pmbootstrap --aports=$(pwd)/pmaports init
+          
+          # DÜZELTİLEN KISIM:
+          # Loglardan öğrendiğimiz GERÇEK kod adını kullanıyoruz.
+          pmbootstrap config device nothing-spacewar
+          
+          pmbootstrap config ui phosh
+          pmbootstrap config hostname nothing-pmos
+          pmbootstrap config user user
+          pmbootstrap config build_pkgs_on_install True
+          
+          # Index'i güncellemek garanti olur
+          pmbootstrap index
+
+      - name: Build Rootfs
+        run: |
+          # Derlemeyi başlat
+          pmbootstrap install --no-fde --password=1234
+
+      - name: Export Images
+        run: |
+          pmbootstrap export
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nothing-phone1-gnome-images
+          path: /tmp/postmarketOS-export/
+          retention-days: 5
