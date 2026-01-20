@@ -15,7 +15,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip git openssl android-sdk-platform-tools-common
-          # pmbootstrap'u doğrudan kaynaktan kuruyoruz
+          # pmbootstrap'u kaynaktan kuruyoruz
           sudo pip3 install git+https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git --break-system-packages
 
       - name: Clone Custom Aports (Nothing Phone 1 Branch)
@@ -31,24 +31,20 @@ jobs:
 
       - name: Initialize and Configure
         run: |
-          # Varsayılan ayarlarla init yapıyoruz (qemu-amd64 kurulur, sorun değil)
+          # Varsayılan init (Otomatik olarak Edge kanalını seçecektir)
           yes "" | pmbootstrap --aports=$(pwd)/pmaports init
           
-          # ŞİMDİ AYARLARI DÜZELTİYORUZ:
-          # NOT: 'vendor' satırını sildik çünkü cihazı seçince vendor otomatik gelir.
-          
+          # Ayarları Spacewar ve GNOME için güncelliyoruz
+          # 'channel' satırı silindi, çünkü config ile değiştirilemez.
           pmbootstrap config device spacewar
           pmbootstrap config ui gnome
           pmbootstrap config hostname nothing-pmos
           pmbootstrap config user user
           pmbootstrap config build_pkgs_on_install True
-          
-          # Kanalı edge olarak zorlayalım
-          pmbootstrap config channel edge
 
       - name: Build Rootfs
         run: |
-          # --zap: Eski qemu kalıntılarını temizler
+          # --zap: Eski kalıntıları temizle
           # --no-fde: Şifreleme yok
           pmbootstrap --zap install --no-fde --password=1234
 
