@@ -15,19 +15,28 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip git openssl android-sdk-platform-tools-common
+          # pmbootstrap'u doğrudan kaynaktan kuruyoruz
           sudo pip3 install git+https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git --break-system-packages
 
       - name: Clone Custom Aports (Nothing Phone 1 Branch)
         run: |
+          # 1. Fork'u çekiyoruz
           git clone -b nothing-spacewar https://gitlab.postmarketos.org/fekz115/pmaports.git pmaports
+          
+          # 2. HATA ÇÖZÜMÜ:
+          # pmbootstrap'un doğrulama yapabilmesi için resmi depoyu 'upstream' olarak ekliyoruz.
+          cd pmaports
+          git remote add upstream https://gitlab.postmarketos.org/postmarketOS/pmaports.git
+          git fetch upstream
+          cd ..
 
       - name: Initialize and Configure
         run: |
-          # ADIM 1: Önce varsayılan ayarlarla init yapıp config dosyasını oluşturuyoruz.
-          # 'yes ""' komutu, sorulan tüm sorulara (work path vb.) Enter tuşuyla onay verir.
+          # Artık remote hatası almayacağımız için init işlemi çalışacak.
+          # Varsayılan ayarlarla init yapıyoruz:
           yes "" | pmbootstrap --aports=$(pwd)/pmaports init
           
-          # ADIM 2: Şimdi oluşan config dosyasını Spacewar için güncelliyoruz.
+          # Şimdi oluşan config dosyasını Spacewar ve GNOME için güncelliyoruz:
           pmbootstrap config vendor nothing
           pmbootstrap config device spacewar
           pmbootstrap config ui gnome
@@ -35,13 +44,13 @@ jobs:
           pmbootstrap config user user
           pmbootstrap config build_pkgs_on_install True
           
-          # Kontrol için config durumunu yazdıralım (Loglarda görmek için)
-          pmbootstrap config
+          # Emin olmak için channel'ı edge yapalım (gerekirse)
+          pmbootstrap config channel edge
 
       - name: Build Rootfs
         run: |
-          # Artık config dosyamız doğru olduğu için install komutu Spacewar için çalışacak
-          # --zap parametresi eski chroot kalıntılarını temizler (temiz kurulum için)
+          # --zap: Eski kalıntıları temizler
+          # --no-fde: Şifreleme yok
           pmbootstrap --zap install --no-fde --password=1234
 
       - name: Export Images
