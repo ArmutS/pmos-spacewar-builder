@@ -1,0 +1,44 @@
+name: Debug Nothing Repo Structure
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Tools
+        run: sudo apt-get install -y tree
+
+      - name: Clone Repository
+        run: |
+          git clone -b nothing-spacewar https://gitlab.postmarketos.org/fekz115/pmaports.git pmaports
+          cd pmaports
+          git remote add upstream https://gitlab.postmarketos.org/postmarketOS/pmaports.git
+          git fetch upstream
+          cd ..
+
+      - name: 🕵️ List Device Folders
+        run: |
+          echo "=== 1. Searching for 'nothing' folders ==="
+          find pmaports -name "*nothing*" -type d
+          
+          echo "=== 2. Searching for 'spacewar' string in deviceinfo files ==="
+          # Hata verirse script durmasın diye '|| true' ekliyoruz
+          grep -r "spacewar" pmaports/device || true
+
+          echo "=== 3. List all devices in 'testing' category ==="
+          ls -F pmaports/device/testing/ || true
+          
+          echo "=== 4. Content of a found deviceinfo (if any) ==="
+          # nothing ile başlayan ilk klasörün deviceinfo'sunu oku
+          FIRST_NOTHING_DIR=$(find pmaports/device -name "device-nothing-*" -type d | head -n 1)
+          if [ ! -z "$FIRST_NOTHING_DIR" ]; then
+            echo "Reading: $FIRST_NOTHING_DIR/deviceinfo"
+            cat "$FIRST_NOTHING_DIR/deviceinfo"
+          else
+            echo "No 'device-nothing-*' folder found."
+          fi
