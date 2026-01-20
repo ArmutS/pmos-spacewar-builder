@@ -20,10 +20,9 @@ jobs:
 
       - name: Clone Custom Aports (Nothing Phone 1 Branch)
         run: |
-          # 1. Fork'u çekiyoruz
           git clone -b nothing-spacewar https://gitlab.postmarketos.org/fekz115/pmaports.git pmaports
           
-          # 2. Remote hatasını çözmek için upstream ekliyoruz
+          # Remote hatasını çözmek için upstream ekliyoruz
           cd pmaports
           git remote add upstream https://gitlab.postmarketos.org/postmarketOS/pmaports.git
           git fetch upstream
@@ -31,11 +30,10 @@ jobs:
 
       - name: Initialize and Configure
         run: |
-          # Varsayılan init (Otomatik olarak Edge kanalını seçecektir)
+          # Varsayılan ayarlarla config dosyasını oluştur
           yes "" | pmbootstrap --aports=$(pwd)/pmaports init
           
-          # Ayarları Spacewar ve GNOME için güncelliyoruz
-          # 'channel' satırı silindi, çünkü config ile değiştirilemez.
+          # Ayarları Spacewar ve GNOME için güncelle
           pmbootstrap config device spacewar
           pmbootstrap config ui gnome
           pmbootstrap config hostname nothing-pmos
@@ -44,9 +42,8 @@ jobs:
 
       - name: Build Rootfs
         run: |
-          # --zap: Eski kalıntıları temizle
-          # --no-fde: Şifreleme yok
-          pmbootstrap --zap install --no-fde --password=1234
+          # --zap parametresi kaldırıldı, artık hata vermeyecek.
+          pmbootstrap install --no-fde --password=1234
 
       - name: Export Images
         run: |
