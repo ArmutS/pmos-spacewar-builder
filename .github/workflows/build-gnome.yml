@@ -1,4 +1,4 @@
-name: Build PostmarketOS (Spacewar) - FIXED
+name: Build PostmarketOS (Spacewar) - DEBUG & FIX
 
 on:
   workflow_dispatch: # Manuel tetikleme
@@ -25,25 +25,51 @@ jobs:
           git fetch upstream
           cd ..
 
-      - name: Initialize and Configure
+      - name: Initialize pmbootstrap (Dummy)
         run: |
-          # Varsayılan init
+          # Config dosyasını oluşturmak için boş init
           yes "" | pmbootstrap --aports=$(pwd)/pmaports init
+
+      - name: 🔍 DETECT REAL DEVICE NAME (Critical Step)
+        run: |
+          echo "=== DEBUG: Searching for Spacewar deviceinfo ==="
           
-          # BURASI DÜZELTİLDİ: Otomatik bulma yerine ismi ELLE yazıyoruz.
-          # Cihazın 'spacewar' olduğundan %100 eminiz.
-          pmbootstrap config device spacewar
+          # İçinde 'codename="spacewar"' geçen deviceinfo dosyasını buluyoruz.
+          # Bu komut klasör yapısı ne olursa olsun doğru dosyayı bulur.
+          DEVICEINFO_PATH=$(grep -l 'deviceinfo_codename="spacewar"' -r pmaports/device)
+          
+          if [ -z "$DEVICEINFO_PATH" ]; then
+             echo "❌ ERROR: Spacewar codename not found in this repo!"
+             echo "List of all available nothing devices:"
+             find pmaports/device -name "*nothing*"
+             exit 1
+          fi
+          
+          echo "✅ Found deviceinfo at: $DEVICEINFO_PATH"
+          
+          # Dosya yolundan klasör ismini ayıklıyoruz (örn: device-nothing-spacewar)
+          DEVICE_DIR_NAME=$(basename $(dirname $DEVICEINFO_PATH))
+          echo "📂 Folder Name: $DEVICE_DIR_NAME"
+          
+          # 'device-' önekinin kaldırıyoruz (pmbootstrap için)
+          # Örn: device-nothing-spacewar -> nothing-spacewar
+          TARGET_DEVICE=${DEVICE_DIR_NAME#device-}
+          
+          echo "🎯 TARGET DEVICE ID: $TARGET_DEVICE"
+          
+          # Bulduğumuz doğru ismi config'e yazıyoruz
+          pmbootstrap config device $TARGET_DEVICE
           pmbootstrap config ui gnome
           pmbootstrap config hostname nothing-pmos
           pmbootstrap config user user
           pmbootstrap config build_pkgs_on_install True
           
-          # Checksum hatası almamak için index'i güncelliyoruz
-          pmbootstrap index
+          echo "=== Configuration Complete ==="
+          pmbootstrap config
 
       - name: Build Rootfs
         run: |
-          # Kernel'i ve sistemi Spacewar için derle
+          echo "🚀 Starting Build for calculated device..."
           pmbootstrap install --no-fde --password=1234
 
       - name: Export Images
