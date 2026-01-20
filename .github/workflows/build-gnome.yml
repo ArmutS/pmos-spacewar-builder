@@ -1,4 +1,4 @@
-name: Build PostmarketOS (Spacewar) - DEBUG & FIX
+name: Build PostmarketOS (Nothing Phone 1) - FINAL
 
 on:
   workflow_dispatch: # Manuel tetikleme
@@ -20,56 +20,33 @@ jobs:
       - name: Clone Custom Aports (Nothing Phone 1 Branch)
         run: |
           git clone -b nothing-spacewar https://gitlab.postmarketos.org/fekz115/pmaports.git pmaports
+          
+          # Remote hatasını çözmek için upstream ekliyoruz
           cd pmaports
           git remote add upstream https://gitlab.postmarketos.org/postmarketOS/pmaports.git
           git fetch upstream
           cd ..
 
-      - name: Initialize pmbootstrap (Dummy)
+      - name: Initialize and Configure
         run: |
-          # Config dosyasını oluşturmak için boş init
+          # Varsayılan ayarlarla init
           yes "" | pmbootstrap --aports=$(pwd)/pmaports init
-
-      - name: 🔍 DETECT REAL DEVICE NAME (Critical Step)
-        run: |
-          echo "=== DEBUG: Searching for Spacewar deviceinfo ==="
           
-          # İçinde 'codename="spacewar"' geçen deviceinfo dosyasını buluyoruz.
-          # Bu komut klasör yapısı ne olursa olsun doğru dosyayı bulur.
-          DEVICEINFO_PATH=$(grep -l 'deviceinfo_codename="spacewar"' -r pmaports/device)
+          # DÜZELTİLEN KISIM:
+          # Loglardan öğrendiğimiz GERÇEK kod adını kullanıyoruz.
+          pmbootstrap config device nothing-spacewar
           
-          if [ -z "$DEVICEINFO_PATH" ]; then
-             echo "❌ ERROR: Spacewar codename not found in this repo!"
-             echo "List of all available nothing devices:"
-             find pmaports/device -name "*nothing*"
-             exit 1
-          fi
-          
-          echo "✅ Found deviceinfo at: $DEVICEINFO_PATH"
-          
-          # Dosya yolundan klasör ismini ayıklıyoruz (örn: device-nothing-spacewar)
-          DEVICE_DIR_NAME=$(basename $(dirname $DEVICEINFO_PATH))
-          echo "📂 Folder Name: $DEVICE_DIR_NAME"
-          
-          # 'device-' önekinin kaldırıyoruz (pmbootstrap için)
-          # Örn: device-nothing-spacewar -> nothing-spacewar
-          TARGET_DEVICE=${DEVICE_DIR_NAME#device-}
-          
-          echo "🎯 TARGET DEVICE ID: $TARGET_DEVICE"
-          
-          # Bulduğumuz doğru ismi config'e yazıyoruz
-          pmbootstrap config device $TARGET_DEVICE
           pmbootstrap config ui gnome
           pmbootstrap config hostname nothing-pmos
           pmbootstrap config user user
           pmbootstrap config build_pkgs_on_install True
           
-          echo "=== Configuration Complete ==="
-          pmbootstrap config
+          # Index'i güncellemek garanti olur
+          pmbootstrap index
 
       - name: Build Rootfs
         run: |
-          echo "🚀 Starting Build for calculated device..."
+          # Derlemeyi başlat
           pmbootstrap install --no-fde --password=1234
 
       - name: Export Images
@@ -79,6 +56,6 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pmos-spacewar-gnome-images
+          name: nothing-phone1-gnome-images
           path: /tmp/postmarketOS-export/
           retention-days: 5
