@@ -15,34 +15,40 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip git openssl android-sdk-platform-tools-common
-          # PyPI yerine doğrudan git üzerinden kuruyoruz:
+          # Pip hatasını çözmek için doğrudan GitLab kaynağından kuruyoruz
           sudo pip3 install git+https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git --break-system-packages
 
       - name: Clone Custom Aports (Nothing Phone 1 Branch)
         run: |
-          # fekz115'in nothing-spacewar branch'ini çekiyoruz
+          # Fekz115'in nothing-spacewar branch'ini çekiyoruz
           git clone -b nothing-spacewar https://gitlab.postmarketos.org/fekz115/pmaports.git pmaports
 
+      - name: Configure pmbootstrap
+        run: |
+          # Argüman hatasını çözmek için ayarları config ile yapıyoruz
+          # Aports yolunu tam yol (absolute path) olarak veriyoruz
+          pmbootstrap config aports $(pwd)/pmaports
+          pmbootstrap config vendor nothing
+          pmbootstrap config device spacewar
+          pmbootstrap config ui gnome
+          pmbootstrap config hostname nothing-pmos
+          pmbootstrap config user user
+          pmbootstrap config build_pkgs_on_install True
+          
       - name: Initialize pmbootstrap
         run: |
-          # --ui=gnome olarak ayarlandı
-          pmbootstrap --aports=$(pwd)/pmaports init \
-            --vendor=nothing \
-            --device=spacewar \
-            --ui=gnome \
-            --hostname=nothing-pmos \
-            --user=user \
-            --mirrors-postmarketos=http://mirror.postmarketos.org/postmarketos/ \
-            --build-pkgs-on-install
+          # Otomatik onay için 'yes' komutunu kullanıyoruz
+          yes "" | pmbootstrap init
 
       - name: Build Rootfs
         run: |
           # Şifre: 1234 (Bunu kurulumdan sonra değiştirebilirsin)
-          pmbootstrap --aports=$(pwd)/pmaports install --no-fde --password=1234
+          # --no-fde: Disk şifrelemeyi kapatır, ilk kurulum için önerilir.
+          pmbootstrap install --no-fde --password=1234
 
       - name: Export Images
         run: |
-          pmbootstrap --aports=$(pwd)/pmaports export
+          pmbootstrap export
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
