@@ -1,4 +1,4 @@
-name: Build PostmarketOS (GNOME) for Spacewar
+name: Build PostmarketOS (Spacewar) - FIXED
 
 on:
   workflow_dispatch: # Manuel tetikleme
@@ -20,53 +20,30 @@ jobs:
       - name: Clone Custom Aports (Nothing Phone 1 Branch)
         run: |
           git clone -b nothing-spacewar https://gitlab.postmarketos.org/fekz115/pmaports.git pmaports
-          
-          # Remote hatasını önlemek için upstream ekliyoruz
           cd pmaports
           git remote add upstream https://gitlab.postmarketos.org/postmarketOS/pmaports.git
           git fetch upstream
           cd ..
 
-      - name: Initialize pmbootstrap (Dummy)
+      - name: Initialize and Configure
         run: |
-          # Varsayılan ayarlarla init yapıp config dosyasını oluşturuyoruz
-          # Bu aşamada cihaz qemu-amd64 seçilecek, birazdan düzelteceğiz.
+          # Varsayılan init
           yes "" | pmbootstrap --aports=$(pwd)/pmaports init
-
-      - name: Detect and Configure Device
-        run: |
-          echo "Looking for Nothing Phone (1) device folder..."
           
-          # 'device-nothing-*' ile başlayan klasörü buluyoruz
-          DEVICE_PATH=$(find pmaports/device -name "device-nothing-*" -type d | head -n 1)
-          
-          if [ -z "$DEVICE_PATH" ]; then
-            echo "ERROR: Device folder not found!"
-            ls -R pmaports/device
-            exit 1
-          fi
-          
-          echo "Found device folder at: $DEVICE_PATH"
-          
-          # deviceinfo dosyasından gerçek kod adını (codename) çekiyoruz
-          # Genellikle 'spacewar' veya 'nothing-spacewar' yazar.
-          REAL_CODENAME=$(grep "deviceinfo_codename=" "$DEVICE_PATH/deviceinfo" | cut -d'"' -f2)
-          
-          echo "Detected Real Codename: $REAL_CODENAME"
-          
-          # Bulduğumuz doğru ismi config'e işliyoruz
-          pmbootstrap config device $REAL_CODENAME
+          # BURASI DÜZELTİLDİ: Otomatik bulma yerine ismi ELLE yazıyoruz.
+          # Cihazın 'spacewar' olduğundan %100 eminiz.
+          pmbootstrap config device spacewar
           pmbootstrap config ui gnome
           pmbootstrap config hostname nothing-pmos
           pmbootstrap config user user
           pmbootstrap config build_pkgs_on_install True
           
-          # Garanti olsun diye index'i güncelliyoruz
+          # Checksum hatası almamak için index'i güncelliyoruz
           pmbootstrap index
 
       - name: Build Rootfs
         run: |
-          # --no-fde: Şifreleme yok
+          # Kernel'i ve sistemi Spacewar için derle
           pmbootstrap install --no-fde --password=1234
 
       - name: Export Images
