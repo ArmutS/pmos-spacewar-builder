@@ -23,8 +23,7 @@ jobs:
           # 1. Fork'u çekiyoruz
           git clone -b nothing-spacewar https://gitlab.postmarketos.org/fekz115/pmaports.git pmaports
           
-          # 2. HATA ÇÖZÜMÜ:
-          # pmbootstrap'un doğrulama yapabilmesi için resmi depoyu 'upstream' olarak ekliyoruz.
+          # 2. Remote hatasını çözmek için upstream ekliyoruz
           cd pmaports
           git remote add upstream https://gitlab.postmarketos.org/postmarketOS/pmaports.git
           git fetch upstream
@@ -32,24 +31,24 @@ jobs:
 
       - name: Initialize and Configure
         run: |
-          # Artık remote hatası almayacağımız için init işlemi çalışacak.
-          # Varsayılan ayarlarla init yapıyoruz:
+          # Varsayılan ayarlarla init yapıyoruz (qemu-amd64 kurulur, sorun değil)
           yes "" | pmbootstrap --aports=$(pwd)/pmaports init
           
-          # Şimdi oluşan config dosyasını Spacewar ve GNOME için güncelliyoruz:
-          pmbootstrap config vendor nothing
+          # ŞİMDİ AYARLARI DÜZELTİYORUZ:
+          # NOT: 'vendor' satırını sildik çünkü cihazı seçince vendor otomatik gelir.
+          
           pmbootstrap config device spacewar
           pmbootstrap config ui gnome
           pmbootstrap config hostname nothing-pmos
           pmbootstrap config user user
           pmbootstrap config build_pkgs_on_install True
           
-          # Emin olmak için channel'ı edge yapalım (gerekirse)
+          # Kanalı edge olarak zorlayalım
           pmbootstrap config channel edge
 
       - name: Build Rootfs
         run: |
-          # --zap: Eski kalıntıları temizler
+          # --zap: Eski qemu kalıntılarını temizler
           # --no-fde: Şifreleme yok
           pmbootstrap --zap install --no-fde --password=1234
 
