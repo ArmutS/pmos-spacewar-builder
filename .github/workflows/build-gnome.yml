@@ -11,11 +11,12 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Install Dependencies
+- name: Install Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y python3-pip git openssl android-sdk-platform-tools-common
-        sudo pip3 install pmbootstrap --break-system-packages
+        # PyPI yerine doğrudan git üzerinden kuruyoruz:
+        sudo pip3 install git+https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git --break-system-packages
 
     - name: Clone Custom Aports (Nothing Phone 1 Branch)
       run: |
